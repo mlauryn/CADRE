@@ -30,7 +30,7 @@ class Power_CellVoltage(Component):
         self.add_param('LOS', np.zeros((n)), units='unitless',
                        desc="Line of Sight over Time")
 
-        self.add_param('temperature', np.zeros((5, n)), units="degK",
+        self.add_param('temperature', 273.*np.ones((5, n)), units="degK",
                        desc="Temperature of solar cells over time")
 
         self.add_param('exposedArea', np.zeros((7, 12, n)), units="m**2",

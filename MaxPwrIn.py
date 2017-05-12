@@ -101,12 +101,12 @@ class CADRE(Group):
         self.add('p_t', IndepVarComp('t', initial_params['t']), promotes=['*'])
 
         # Design parameters
-        # self.add('p_CP_Isetpt', IndepVarComp('CP_Isetpt',
-                                          # initial_params['CP_Isetpt']),
-                 # promotes=['*'])
+        self.add('p_CP_Isetpt', IndepVarComp('CP_Isetpt',
+                                           initial_params['CP_Isetpt']),
+                  promotes=['*'])
         self.add('p_CP_gamma', IndepVarComp('CP_gamma',
                                          initial_params['CP_gamma']),
-                 promotes=['*'])
+                  promotes=['*'])
         # self.add('p_CP_P_comm', IndepVarComp('CP_P_comm',
                                           # initial_params['CP_P_comm']),
                  # promotes=['*'])
@@ -119,17 +119,17 @@ class CADRE(Group):
         self.add('p_finAngle', IndepVarComp('finAngle', np.pi / 4.), promotes=['*'])
         #self.add('p_antAngle', IndepVarComp('antAngle', 0.0), promotes=['*'])
 
-        self.add('param_LD', IndepVarComp('LD', initial_params['LD']),
-                 promotes=['*'])
-        self.add('param_lat', IndepVarComp('lat', initial_params['lat']),
-                 promotes=['*'])
-        self.add('param_lon', IndepVarComp('lon', initial_params['lon']),
-                 promotes=['*'])
-        self.add('param_alt', IndepVarComp('alt', initial_params['alt']),
-                 promotes=['*'])
-        self.add('param_r_e2b_I0', IndepVarComp('r_e2b_I0',
-                                             initial_params['r_e2b_I0']),
-                 promotes=['*'])
+        #self.add('param_LD', IndepVarComp('LD', initial_params['LD']),
+        #         promotes=['*'])
+        #self.add('param_lat', IndepVarComp('lat', initial_params['lat']),
+        #         promotes=['*'])
+        #self.add('param_lon', IndepVarComp('lon', initial_params['lon']),
+        #         promotes=['*'])
+        #self.add('param_alt', IndepVarComp('alt', initial_params['alt']),
+        #         promotes=['*'])
+        #self.add('param_r_e2b_I0', IndepVarComp('r_e2b_I0',
+        #                                     initial_params['r_e2b_I0']),
+        #         promotes=['*'])
 
         # Add Component Models
         self.add("BsplineParameters", BsplineParameters(n, m), promotes=['*'])
@@ -165,7 +165,7 @@ class CADRE(Group):
         # self.add("Comm_VectorSpherical", Comm_VectorSpherical(n), promotes=['*'])
 
         # Not needed?
-        self.add("Orbit_Initial", Orbit_Initial())
+        self.add("Orbit_Initial", Orbit_Initial(), promotes=['*'])
 
         self.add("Orbit_Dynamics", Orbit_Dynamics(n, h), promotes=['*'])
         self.add("Voltage", Power_CellVoltage(n, power_raw),
@@ -215,7 +215,7 @@ class MaxPwrIn(Group):
     self.add("CADRE", CADRE(n, m))
     self.add("perf", Perf(n))
 
-    self.connect("CADRE.Power.P_sol", "perf.P_sol")
+    self.connect("CADRE.P_sol", "perf.P_sol")
 
 
 if __name__ == "__main__":
@@ -230,13 +230,13 @@ if __name__ == "__main__":
   model.setup()
   model.run()
    
-  Pawg1 = perf.result*h/t2
+  Pawg1 = model['perf.result']/149
   print("Orbit average power before optimization:", Pawg1)
   
-  pylab.figure()
-  pylab.title("Roll angle $\gamma$, Before optimization")
-  pylab.subplot(211)
-  pylab.plot(CP_gamma)
+  #pylab.figure()
+  #pylab.title("Roll angle $\gamma$, Before optimization")
+  #pylab.subplot(211)
+  #pylab.plot(CP_gamma)
 
   #add driver
   #model.driver = ScipyOptimizer()
