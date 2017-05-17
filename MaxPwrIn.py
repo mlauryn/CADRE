@@ -5,6 +5,7 @@ from six.moves import range
 import numpy as np
 
 from openmdao.api import IndepVarComp, Component, Group, Problem, ScipyOptimizer
+#from openmdao.drivers.pyoptsparse_driver import pyOptSparseDriver
  
 from CADRE.power import Power_SolarPower, Power_CellVoltage
 from CADRE.parameters import BsplineParameters
@@ -58,7 +59,7 @@ class CADRE(Group):
         # Analysis parameters
         self.n = n
         self.m = m
-        h = 43200.0 / (self.n - 1)
+        h =5400.0 / (self.n - 1)
 
         # User-defined initial parameters
         if initial_params is None:
@@ -66,13 +67,13 @@ class CADRE(Group):
         if 't1' not in initial_params:
             initial_params['t1'] = 0.0
         if 't2' not in initial_params:
-            initial_params['t2'] = 43200.0
+            initial_params['t2'] =5400.0
         if 't' not in initial_params:
             initial_params['t'] = np.array(range(0, n))*h
         if 'CP_Isetpt' not in initial_params:
             initial_params['CP_Isetpt'] = 0.2 * np.ones((12, self.m))
         if 'CP_gamma' not in initial_params:
-            initial_params['CP_gamma'] = np.pi/4 * np.ones((self.m, ))
+            initial_params['CP_gamma'] = np.pi/8 * np.ones((self.m, ))
         if 'CP_P_comm' not in initial_params:
             initial_params['CP_P_comm'] = 0.1 * np.ones((self.m, ))
 
@@ -195,10 +196,10 @@ class Perf(Component):
                         desc="Solar panels power over time")
     self.add_output("result", 0.0)
 
-    self.J = -np.ones((1, n))
+    self.J = np.ones((1, n))
 
   def solve_nonlinear(self, params, unknowns, resids):
-    unknowns['result'] = -np.sum(params['P_sol'])
+    unknowns['result'] = np.sum(params['P_sol'])
 
   def linearize(self, params, unknowns, resids):
 
@@ -210,7 +211,7 @@ class MaxPwrIn(Group):
   def __init__(self):
     super(MaxPwrIn, self).__init__()
     n = 150
-    m = 6
+    m = 50 
     
     self.add("CADRE", CADRE(n, m))
     self.add("perf", Perf(n))
@@ -231,7 +232,6 @@ if __name__ == "__main__":
   model.run()
    
   Pawg1 = model['perf.result']/149
-  print("Orbit average power before optimization:", Pawg1)
   
   #pylab.figure()
   #pylab.title("Roll angle $\gamma$, Before optimization")
@@ -239,14 +239,15 @@ if __name__ == "__main__":
   #pylab.plot(CP_gamma)
 
   #add driver
-  #model.driver = ScipyOptimizer()
-  #model.driver.options['optimizer'] = "SLSQP"
+  model.driver = ScipyOptimizer()
+  model.driver.options['optimizer'] = "SLSQP"
+  #model.driver.options['tol'] = 1.0e-8 
   
-  #model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
-  #model.driver.add_objective("perf.result")
+  model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
+  model.driver.add_objective("perf.result")
   
-  #model.setup()
-  #model.run()
+  model.setup()
+  model.run()
   
   #pylab.title("After Optimization")
   #pylab.subplot(212)
@@ -254,11 +255,11 @@ if __name__ == "__main__":
   #pylab.plot(model['parallel.pt1.param.CP_Isetpt'].T)
 
   #t = time.time()
+   
+  Pawg2 = model['perf.result']/149
   
-
-  
-  #Pawg2 = perf.result*h/t2
-  
+  print("Orbit average power before optimization:", Pawg1)
+  print("Orbit average power after optimization:", Pawg2)
   #pylab.subplot(212)
   #pylab.plot(model['pt0.param.CP_Isetpt'].T)
   #pylab.plot(model['pt1.param.CP_Isetpt'].T)
