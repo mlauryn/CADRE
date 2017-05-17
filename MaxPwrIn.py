@@ -120,17 +120,17 @@ class CADRE(Group):
         self.add('p_finAngle', IndepVarComp('finAngle', np.pi / 4.), promotes=['*'])
         #self.add('p_antAngle', IndepVarComp('antAngle', 0.0), promotes=['*'])
 
-        #self.add('param_LD', IndepVarComp('LD', initial_params['LD']),
-        #         promotes=['*'])
+        self.add('param_LD', IndepVarComp('LD', initial_params['LD']),
+                 promotes=['*'])
         #self.add('param_lat', IndepVarComp('lat', initial_params['lat']),
         #         promotes=['*'])
         #self.add('param_lon', IndepVarComp('lon', initial_params['lon']),
         #         promotes=['*'])
         #self.add('param_alt', IndepVarComp('alt', initial_params['alt']),
         #         promotes=['*'])
-        #self.add('param_r_e2b_I0', IndepVarComp('r_e2b_I0',
-        #                                     initial_params['r_e2b_I0']),
-        #         promotes=['*'])
+        self.add('param_r_e2b_I0', IndepVarComp('r_e2b_I0',
+                                             initial_params['r_e2b_I0']),
+                 promotes=['*'])
 
         # Add Component Models
         self.add("BsplineParameters", BsplineParameters(n, m), promotes=['*'])
@@ -166,7 +166,7 @@ class CADRE(Group):
         # self.add("Comm_VectorSpherical", Comm_VectorSpherical(n), promotes=['*'])
 
         # Not needed?
-        self.add("Orbit_Initial", Orbit_Initial(), promotes=['*'])
+        #self.add("Orbit_Initial", Orbit_Initial(), promotes=['*'])
 
         self.add("Orbit_Dynamics", Orbit_Dynamics(n, h), promotes=['*'])
         self.add("Voltage", Power_CellVoltage(n, power_raw),
@@ -211,9 +211,10 @@ class MaxPwrIn(Group):
   def __init__(self):
     super(MaxPwrIn, self).__init__()
     n = 150
-    m = 50 
+    m = 50
+    initial_params = {'CP_gamma':np.zeros(m), 'LD':6474.33, 'r_e2b_I0':np.array([0., 6778.136, 0., 9.3456e-01, 0., 7.6113])} 
     
-    self.add("CADRE", CADRE(n, m))
+    self.add("CADRE", CADRE(n, m, initial_params=initial_params))
     self.add("perf", Perf(n))
 
     self.connect("CADRE.P_sol", "perf.P_sol")
@@ -239,15 +240,15 @@ if __name__ == "__main__":
   #pylab.plot(CP_gamma)
 
   #add driver
-  model.driver = ScipyOptimizer()
-  model.driver.options['optimizer'] = "SLSQP"
+  #model.driver = ScipyOptimizer()
+  #model.driver.options['optimizer'] = "SLSQP"
   #model.driver.options['tol'] = 1.0e-8 
   
-  model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
-  model.driver.add_objective("perf.result")
+  #model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
+  #model.driver.add_objective("perf.result")
   
-  model.setup()
-  model.run()
+  #model.setup()
+  #model.run()
   
   #pylab.title("After Optimization")
   #pylab.subplot(212)
@@ -256,10 +257,10 @@ if __name__ == "__main__":
 
   #t = time.time()
    
-  Pawg2 = model['perf.result']/149
+  #Pawg2 = model['perf.result']/149
   
   print("Orbit average power before optimization:", Pawg1)
-  print("Orbit average power after optimization:", Pawg2)
+  #print("Orbit average power after optimization:", Pawg2)
   #pylab.subplot(212)
   #pylab.plot(model['pt0.param.CP_Isetpt'].T)
   #pylab.plot(model['pt1.param.CP_Isetpt'].T)
