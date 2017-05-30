@@ -240,15 +240,16 @@ if __name__ == "__main__":
   #pylab.plot(CP_gamma)
 
   #add driver
-  #model.driver = ScipyOptimizer()
-  #model.driver.options['optimizer'] = "SLSQP"
+  model.driver = ScipyOptimizer()
+  model.driver.options['optimizer'] = "SLSQP"
   #model.driver.options['tol'] = 1.0e-8 
   
-  #model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
-  #model.driver.add_objective("perf.result")
+  model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
+  model.driver.add_desvar("CADRE.CP_Isetpt", lower=0., upper=0.4)
+  model.driver.add_objective("perf.result")
   
-  #model.setup()
-  #model.run()
+  model.setup()
+  model.run()
   
   #pylab.title("After Optimization")
   #pylab.subplot(212)
@@ -257,10 +258,10 @@ if __name__ == "__main__":
 
   #t = time.time()
    
-  #Pawg2 = model['perf.result']/149
+  Pawg2 = model['perf.result']/149
   
   print("Orbit average power before optimization:", Pawg1)
-  #print("Orbit average power after optimization:", Pawg2)
+  print("Orbit average power after optimization:", Pawg2)
   #pylab.subplot(212)
   #pylab.plot(model['pt0.param.CP_Isetpt'].T)
   #pylab.plot(model['pt1.param.CP_Isetpt'].T)
