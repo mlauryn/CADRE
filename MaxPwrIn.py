@@ -246,6 +246,7 @@ if __name__ == "__main__":
   
   model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
   model.driver.add_desvar("CADRE.CP_Isetpt", lower=0., upper=0.4)
+  model.driver.add_desvar("CADRE.finAngle", lower=0., upper=np.pi/2)
   model.driver.add_objective("perf.result")
   
   model.setup()
