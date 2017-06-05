@@ -1,4 +1,4 @@
-""" Optimization of the CADRE roll angle for maximum solar power."""
+""" Optimization of the CADRE roll angle, fin angle and set point current for maximum solar power input"""
 
 from six.moves import range
 
@@ -71,7 +71,7 @@ class CADRE(Group):
         if 't' not in initial_params:
             initial_params['t'] = np.array(range(0, n))*h
         if 'CP_Isetpt' not in initial_params:
-            initial_params['CP_Isetpt'] = 0.2 * np.ones((12, self.m))
+            initial_params['CP_Isetpt'] = 0.3 * np.ones((12, self.m))
         if 'CP_gamma' not in initial_params:
             initial_params['CP_gamma'] = np.pi/8 * np.ones((self.m, ))
         if 'CP_P_comm' not in initial_params:
@@ -188,18 +188,18 @@ class CADRE(Group):
         self.add("Sun_PositionSpherical", Sun_PositionSpherical(n), promotes=['*'])
         # self.add("ThermalTemperature", ThermalTemperature(n, h), promotes=['*'])
 
-class Perf(Component):
+class PowerSum(Component):
   """ Definition of objective function."""
   def __init__(self, n):
-    super(Perf, self).__init__()
+    super(PowerSum, self).__init__()
     self.add_param('P_sol', np.zeros((n, )), units="W",
                         desc="Solar panels power over time")
     self.add_output("result", 0.0)
 
-    self.J = np.ones((1, n))
+    self.J = -np.ones((1, n))
 
   def solve_nonlinear(self, params, unknowns, resids):
-    unknowns['result'] = np.sum(params['P_sol'])
+    unknowns['result'] = -np.sum(params['P_sol'])
 
   def linearize(self, params, unknowns, resids):
 
@@ -207,17 +207,18 @@ class Perf(Component):
 
 
 class MaxPwrIn(Group):
-
+  """Setup of initial parameters for the problem"""
   def __init__(self):
     super(MaxPwrIn, self).__init__()
-    n = 150
-    m = 50
-    initial_params = {'CP_gamma':np.zeros(m), 'LD':6474.33, 'r_e2b_I0':np.array([0., 6778.136, 0., 9.3456e-01, 0., 7.6113])} 
+    n = 90 
+    m = 10
+    #I use Dawn/Dusk Sun synchronous orbit for initial testing
+    initial_params = {'LD':6474.33, 'r_e2b_I0':np.array([0., 6778.136, 0., 9.3456e-01, 0., 7.6113])} 
     
     self.add("CADRE", CADRE(n, m, initial_params=initial_params))
-    self.add("perf", Perf(n))
+    self.add("PowerSum", PowerSum(n))
 
-    self.connect("CADRE.P_sol", "perf.P_sol")
+    self.connect("CADRE.P_sol", "PowerSum.P_sol")
 
 
 if __name__ == "__main__":
@@ -232,7 +233,7 @@ if __name__ == "__main__":
   model.setup()
   model.run()
    
-  Pawg1 = model['perf.result']/149
+  Pawg1 = -model['PowerSum.result']/89
   
   #pylab.figure()
   #pylab.title("Roll angle $\gamma$, Before optimization")
@@ -247,7 +248,7 @@ if __name__ == "__main__":
   model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
   model.driver.add_desvar("CADRE.CP_Isetpt", lower=0., upper=0.4)
   model.driver.add_desvar("CADRE.finAngle", lower=0., upper=np.pi/2)
-  model.driver.add_objective("perf.result")
+  model.driver.add_objective("PowerSum.result")
   
   model.setup()
   model.run()
@@ -259,7 +260,7 @@ if __name__ == "__main__":
 
   #t = time.time()
    
-  Pawg2 = model['perf.result']/149
+  Pawg2 = -model['PowerSum.result']/89
   
   print("Orbit average power before optimization:", Pawg1)
   print("Orbit average power after optimization:", Pawg2)
