@@ -13,7 +13,7 @@ epoch = time.jyear_str
 
 #orbit parameters
 altitude = 500.0 * u.km
-inclination = 0 * u.deg
+inclination = 90 * u.deg
 RAAN = 90.0 * u.deg
 
 orbit = Orbit.circular(Earth, altitude, inclination, RAAN, epoch=epoch)
