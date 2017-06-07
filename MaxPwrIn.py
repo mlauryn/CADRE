@@ -1,5 +1,8 @@
 """ Optimization of the CADRE roll angle, fin angle and set point current for maximum solar power input"""
 
+import time
+t = time.time()
+
 from six.moves import range
 
 import numpy as np
@@ -71,9 +74,9 @@ class CADRE(Group):
         if 't' not in initial_params:
             initial_params['t'] = np.array(range(0, n))*h
         if 'CP_Isetpt' not in initial_params:
-            initial_params['CP_Isetpt'] = 0.3 * np.ones((12, self.m))
+            initial_params['CP_Isetpt'] = 0.2 * np.ones((12, self.m))
         if 'CP_gamma' not in initial_params:
-            initial_params['CP_gamma'] = np.pi/8 * np.ones((self.m, ))
+            initial_params['CP_gamma'] = np.pi/4 * np.ones((self.m, ))
         if 'CP_P_comm' not in initial_params:
             initial_params['CP_P_comm'] = 0.1 * np.ones((self.m, ))
 
@@ -117,7 +120,7 @@ class CADRE(Group):
         # These are broadcast params in the MDP.
         #self.add('p_cellInstd', IndepVarComp('cellInstd', np.ones((7, 12))),
         #         promotes=['*'])
-        self.add('p_finAngle', IndepVarComp('finAngle', np.pi / 4.), promotes=['*'])
+        self.add('p_finAngle', IndepVarComp('finAngle', np.pi / 9), promotes=['*'])
         #self.add('p_antAngle', IndepVarComp('antAngle', 0.0), promotes=['*'])
 
         self.add('param_LD', IndepVarComp('LD', initial_params['LD']),
@@ -211,9 +214,9 @@ class MaxPwrIn(Group):
   def __init__(self):
     super(MaxPwrIn, self).__init__()
     n = 90 
-    m = 10
-    #I use Dawn/Dusk Sun synchronous orbit for initial testing
-    initial_params = {'LD':6474.33, 'r_e2b_I0':np.array([0., 6778.136, 0., 9.3456e-01, 0., 7.6113])} 
+    m = 30
+    #LS2_orbit parameters 
+    initial_params = {'CP_Isetpt':np.loadtxt('CP_Isetpt.out'), 'LD':6383.167, 'r_e2b_I0':np.array([-3994.154, -5599.597, 0., -0.8089412, 0.57701217, 7.547477])} 
     
     self.add("CADRE", CADRE(n, m, initial_params=initial_params))
     self.add("PowerSum", PowerSum(n))
@@ -222,9 +225,6 @@ class MaxPwrIn(Group):
 
 
 if __name__ == "__main__":
-
-  import pylab
-  import time
 
   model = Problem()
   model.root = MaxPwrIn()
@@ -235,10 +235,16 @@ if __name__ == "__main__":
    
   Pawg1 = -model['PowerSum.result']/89
   
-  #pylab.figure()
-  #pylab.title("Roll angle $\gamma$, Before optimization")
-  #pylab.subplot(211)
-  #pylab.plot(CP_gamma)
+  import matplotlib
+  matplotlib.use('Agg')  
+  import pylab
+
+  pylab.figure()
+  pylab.title("Roll angle $\gamma$, Before optimization")
+  pylab.ylabel('$\gama$, degrees')
+  pylab.xlabel('time,s')
+  pylab.subplot(211)
+  pylab.plot(model['CADRE.CP_gamma'] * 180/np.pi)
 
   #add driver
   model.driver = ScipyOptimizer()
@@ -246,27 +252,28 @@ if __name__ == "__main__":
   #model.driver.options['tol'] = 1.0e-8 
   
   model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
-  model.driver.add_desvar("CADRE.CP_Isetpt", lower=0., upper=0.4)
+  #model.driver.add_desvar("CADRE.CP_Isetpt", lower=0., upper=0.4)
   model.driver.add_desvar("CADRE.finAngle", lower=0., upper=np.pi/2)
   model.driver.add_objective("PowerSum.result")
   
   model.setup()
   model.run()
   
-  #pylab.title("After Optimization")
-  #pylab.subplot(212)
-  #pylab.plot(model['parallel.pt0.param.CP_Isetpt'].T)
-  #pylab.plot(model['parallel.pt1.param.CP_Isetpt'].T)
+  #output design variable results
+  #np.savetxt('CP_Isetpt.out', model['CADRE.CP_Isetpt'], fmt='%1.4e')
 
-  #t = time.time()
-   
+  pylab.title("After Optimization")
+  pylab.subplot(212)
+  pylab.plot(model['CADRE.CP_gamma'] * 180/np.pi)
+  pylab.savefig('Gamma.png')
+ 
   Pawg2 = -model['PowerSum.result']/89
   
-  print("Orbit average power before optimization:", Pawg1)
-  print("Orbit average power after optimization:", Pawg2)
-  #pylab.subplot(212)
-  #pylab.plot(model['pt0.param.CP_Isetpt'].T)
-  #pylab.plot(model['pt1.param.CP_Isetpt'].T)
+  print("Orbit average power before optimization: %.3f W" %Pawg1)
+  print("Orbit average power after optimization: %.3f W" %Pawg2)
 
-  #print time.time() - t
+  angle = model['CADRE.finAngle']*180/np.pi
+  print("Optimal fin angle: %.2f degrees" %angle)
+
+  print('run time: ', time.time() - t)
   #pylab.show()
