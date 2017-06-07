@@ -240,19 +240,19 @@ if __name__ == "__main__":
   import pylab
 
   pylab.figure()
-  pylab.title("Roll angle $\gamma$, Before optimization")
-  pylab.ylabel('$\gama$, degrees')
-  pylab.xlabel('time,s')
-  pylab.subplot(211)
-  pylab.plot(model['CADRE.CP_gamma'] * 180/np.pi)
-
+  pylab.title("Roll angle gamma, Before optimization")
+  pylab.ylabel('gamma, degrees')
+  pylab.xlabel('time')
+  pylab.plot(model['CADRE.Gamma'] * 180/np.pi)
+  pylab.savefig('Gamma0.png')
+  
   #add driver
   model.driver = ScipyOptimizer()
   model.driver.options['optimizer'] = "SLSQP"
-  #model.driver.options['tol'] = 1.0e-8 
+  model.driver.options['tol'] = 1.0e-8 
   
   model.driver.add_desvar("CADRE.CP_gamma", lower=0, upper=np.pi/2.)
-  #model.driver.add_desvar("CADRE.CP_Isetpt", lower=0., upper=0.4)
+  model.driver.add_desvar("CADRE.CP_Isetpt", lower=0., upper=0.4)
   model.driver.add_desvar("CADRE.finAngle", lower=0., upper=np.pi/2)
   model.driver.add_objective("PowerSum.result")
   
@@ -262,10 +262,12 @@ if __name__ == "__main__":
   #output design variable results
   #np.savetxt('CP_Isetpt.out', model['CADRE.CP_Isetpt'], fmt='%1.4e')
 
-  pylab.title("After Optimization")
-  pylab.subplot(212)
-  pylab.plot(model['CADRE.CP_gamma'] * 180/np.pi)
-  pylab.savefig('Gamma.png')
+  pylab.figure()
+  pylab.title("Roll angle gamma, after optimization")
+  pylab.ylabel('gamma, degrees')
+  pylab.xlabel('time')
+  pylab.plot(model['CADRE.Gamma'] * 180/np.pi)
+  pylab.savefig('Gamma_opt.png')
  
   Pawg2 = -model['PowerSum.result']/89
   
@@ -275,5 +277,6 @@ if __name__ == "__main__":
   angle = model['CADRE.finAngle']*180/np.pi
   print("Optimal fin angle: %.2f degrees" %angle)
 
-  print('run time: ', time.time() - t)
+  runtime = (time.time() - t)/60
+  print('run time: %.1f minutes' %runtime)
   #pylab.show()
